@@ -1,0 +1,82 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # База данных PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: taskmanager-postgres
+    environment:
+      POSTGRES_DB: taskmanager
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend сервис
+  backend:
+    build:
+      context: ./apps/backend
+    container_name: taskmanager-backend
+    environment:
+      DATABASE_URL: "postgresql://postgres:password123@postgres:5432/taskmanager"
+      DIRECT_URL: "postgresql://postgres:password123@postgres:5432/taskmanager"
+      JWT_SECRET: "your-super-secret-jwt-key-change-in-production"
+      REFRESH_JWT_SECRET: "your-super-secret-refresh-key-change-in-production"
+      NODE_ENV: development
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+      - /app/dist
+    command: >
+      sh -c "
+        npm install &&
+        npx prisma generate &&
+        npx prisma migrate dev &&
+        npm run start
+      "
+
+  # Frontend сервис
+  frontend:
+    build:
+      context: ./apps/frontend
+    container_name: taskmanager-frontend
+    environment:
+      VITE_BACKEND_ADDR: http://localhost:4000
+      VITE_API_LOGIN: http://localhost:4000/api/auth/login
+      VITE_API_LOGOUT: http://localhost:4000/api/auth/logout
+      VITE_API_REGISTER: http://localhost:4000/api/auth/register
+      VITE_API_JWT_REFRESH: http://localhost:4000/api/auth/refresh
+      VITE_API_WORKSPACES: http://localhost:4000/api/workspaces
+      VITE_API_BOARDS: http://localhost:4000/api/boards
+      VITE_API_LISTS: http://localhost:4000/api/lists
+      VITE_API_CARDS: http://localhost:4000/api/cards
+      VITE_API_USER: http://localhost:4000/api/user
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    command: >
+      sh -c "
+        npm install &&
+        npm run dev -- --host 0.0.0.0
+      "
+
+volumes:
+  postgres_data:

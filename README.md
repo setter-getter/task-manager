@@ -116,3 +116,17 @@ VITE_API_USER=${VITE_BACKEND_ADDR}/api/user
 ![layout-3 picture](https://github.com/ev0clu/task-manager/blob/main/layout-3.png?raw=true)<br>
 ![layout-4 picture](https://github.com/ev0clu/task-manager/blob/main/layout-4.png?raw=true)<br>
 ![layout-5 picture](https://github.com/ev0clu/task-manager/blob/main/layout-5.png?raw=true)<br>
+
+
+
+# Запуск всего проекта
+docker-compose up -d
+
+# Просмотр логов
+docker-compose logs -f
+
+# Остановка
+docker-compose down
+
+# Полная очистка (включая базу данных)
+docker-compose down -v
