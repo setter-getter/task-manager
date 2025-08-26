@@ -4,6 +4,7 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Копируем package.json
+RUN apk update && apk add --no-cache openssl
 COPY package*.json ./
 COPY prisma ./prisma/
 
